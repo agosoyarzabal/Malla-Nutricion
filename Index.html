@@ -1,0 +1,178 @@
+<!DOCTYPE html><html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Malla Interactiva - Nutrición UBA</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      margin: 0;
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+    }
+    .year {
+      background: #fff;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .year h2 {
+      text-align: center;
+      color: #00796b;
+    }
+    .subject {
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      border-radius: 6px;
+      background: #e0f2f1;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.3s;
+    }
+    .subject.completed {
+      background: #c8e6c9;
+      text-decoration: line-through;
+    }
+    .subject.locked {
+      background: #eee;
+      color: #999;
+      cursor: not-allowed;
+    }
+    .subject[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      background: #333;
+      color: #fff;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+<h1>Malla Interactiva - Lic. en Nutrición (UBA)</h1>
+<div class="grid" id="malla"></div><script>
+const materias = {
+  "CBC": [
+    { id: "quimica", nombre: "Química" },
+    { id: "ics", nombre: "Int. al Conocimiento de la Sociedad" },
+    { id: "ipc", nombre: "Int. al Pensamiento Científico" },
+    { id: "matematica", nombre: "Matemática" },
+    { id: "fisica", nombre: "Física e Int. a la Biofísica", req: ["matematica"] },
+    { id: "biologia", nombre: "Biología e Int. a la Biol. Celular", req: ["quimica"] },
+  ],
+  "2do año": [
+    { id: "bioquimica", nombre: "Bioquímica de la Nutrición", req: ["quimica", "fisica", "biologia"] },
+    { id: "anatomia", nombre: "Anatomía", req: ["biologia"] },
+    { id: "fisiologia", nombre: "Fisiología", req: ["fisica"] },
+    { id: "nutricion_normal", nombre: "Nutrición Normal", req: ["bioquimica"] },
+    { id: "salud_publica", nombre: "Int. a la Salud Pública" },
+    { id: "socioantropologia", nombre: "Socioantropología" },
+    { id: "estadistica", nombre: "Estadística" },
+  ],
+  "3er año": [
+    { id: "fisiopatologia", nombre: "Fisiopatología", req: ["anatomia", "fisiologia", "bioquimica", "nutricion_normal"] },
+    { id: "tecnica_dietetica", nombre: "Técnica Dietética", req: ["bioquimica", "nutricion_normal"] },
+    { id: "bromatologia", nombre: "Bromatología y Tec. Alimentaria", req: ["bioquimica", "nutricion_normal"] },
+    { id: "microbiologia", nombre: "Microbiología y Parasitología", req: ["bioquimica", "anatomia", "fisiologia"] },
+    { id: "alimentacion_nino", nombre: "Alimentación del Niño Sano", req: ["anatomia", "fisiologia", "bioquimica", "nutricion_normal"] },
+    { id: "desarrollo_comunidad", nombre: "Desarrollo de la Comunidad" },
+    { id: "economia", nombre: "Economía General y Familiar", req: ["nutricion_normal"] },
+    { id: "bioestadistica", nombre: "Bioestadística", req: ["estadistica"] },
+    { id: "relaciones_humanas", nombre: "Relaciones Humanas y Éticas" },
+    { id: "saneamiento", nombre: "Saneamiento e Higiene de Alimentos", req: ["salud_publica"] },
+    { id: "produccion_alimentos", nombre: "Producción y Mercadeo de Alimentos", req: ["economia"] },
+    { id: "metodologia_investigacion", nombre: "Metodología de la Investigación", req: ["bioestadistica"] }
+  ],
+  "4to año": [
+    { id: "psicologia", nombre: "Psicología de la Nutrición", req: ["socioantropologia", "alimentacion_nino"] },
+    { id: "educacion_nutricion", nombre: "Educación en Nutrición", req: ["alimentacion_nino", "desarrollo_comunidad", "tecnica_dietetica", "bromatologia"] },
+    { id: "administracion_servicios", nombre: "Adm. de Servicios de Alimentación", req: ["produccion_alimentos", "tecnica_dietetica", "bromatologia"] },
+    { id: "planificacion", nombre: "Planificación y Adm. General", req: ["salud_publica", "economia"] },
+    { id: "epidemiologia", nombre: "Epidemiología en Nutrición", req: ["metodologia_investigacion"] },
+    { id: "evaluacion_nutricional", nombre: "Evaluación Nutricional", req: ["bioestadistica", "alimentacion_nino"] },
+    { id: "tecnica_dietoterapica", nombre: "Técnica Dietoterápica", req: ["fisiopatologia", "tecnica_dietetica", "bromatologia"] },
+    { id: "fisiopatologia_nino", nombre: "Fisiopatología y Dietoterapia del Niño", req: ["alimentacion_nino", "fisiopatologia", "tecnica_dietetica", "bromatologia"] },
+    { id: "nutricion_salud_publica", nombre: "Nutrición en Salud Pública", req: ["salud_publica", "epidemiologia", "evaluacion_nutricional"] },
+    { id: "dietoterapia_adulto", nombre: "Dietoterapia del Adulto", req: ["fisiopatologia", "tecnica_dietetica", "bromatologia"] }
+  ],
+  "5to año": [
+    { id: "practicas_salud_publica", nombre: "Prácticas en Salud Pública", req: ["dietoterapia_adulto"] },
+    { id: "practicas_dietoterapia", nombre: "Prácticas en Dietoterapia", req: ["dietoterapia_adulto"] },
+    { id: "seminarios", nombre: "Seminarios", req: ["dietoterapia_adulto"] },
+    { id: "politica_alimentaria", nombre: "Política Alimentaria (Optativa)", req: ["dietoterapia_adulto"] },
+    { id: "informatica", nombre: "Informática (Optativa)", req: ["dietoterapia_adulto"] },
+    { id: "comunicacion", nombre: "Comunicación y Audiovisuales (Optativa)", req: ["dietoterapia_adulto"] },
+    { id: "extension_rural", nombre: "Extensión Rural (Optativa)", req: ["dietoterapia_adulto"] },
+    { id: "tecnica_dietetica_exp", nombre: "Técnica Dietética Experimental (Optativa)", req: ["dietoterapia_adulto"] },
+    { id: "ingles_tecnico", nombre: "Inglés Técnico (Optativa)", req: ["dietoterapia_adulto"] },
+    { id: "interaccion_droga_alimento", nombre: "Interacción Droga-Alimento (Optativa)", req: ["dietoterapia_adulto", "fisiopatologia_nino"] },
+    { id: "nutricion_deporte", nombre: "Nutrición y Deporte (Optativa)", req: ["dietoterapia_adulto"] },
+    { id: "nutricion_paciente_critico", nombre: "Nutrición en el Paciente Crítico (Optativa)", req: ["dietoterapia_adulto"] }
+  ]
+};
+
+const completadas = new Set(JSON.parse(localStorage.getItem("materiasAprobadas") || "[]"));
+
+function guardarProgreso() {
+  localStorage.setItem("materiasAprobadas", JSON.stringify([...completadas]));
+}
+
+function crearMateria(materia) {
+  const div = document.createElement("div");
+  div.className = "subject";
+  div.textContent = materia.nombre;
+
+  const requisitos = materia.req || [];
+  const bloqueada = requisitos.some(id => !completadas.has(id));
+
+  if (bloqueada) {
+    div.classList.add("locked");
+    div.title = "Faltan: " + requisitos.filter(id => !completadas.has(id)).join(", ");
+  } else {
+    if (completadas.has(materia.id)) {
+      div.classList.add("completed");
+    }
+    div.onclick = () => {
+      if (completadas.has(materia.id)) {
+        completadas.delete(materia.id);
+      } else {
+        completadas.add(materia.id);
+      }
+      guardarProgreso();
+      renderMalla();
+    };
+  }
+  return div;
+}
+
+function renderMalla() {
+  const contenedor = document.getElementById("malla");
+  contenedor.innerHTML = "";
+  for (const [anio, lista] of Object.entries(materias)) {
+    const columna = document.createElement("div");
+    columna.className = "year";
+    const titulo = document.createElement("h2");
+    titulo.textContent = anio;
+    columna.appendChild(titulo);
+    lista.forEach(m => columna.appendChild(crearMateria(m)));
+    contenedor.appendChild(columna);
+  }
+}
+
+renderMalla();
+</script></body>
+</html>
